@@ -1,0 +1,90 @@
+<p-toast></p-toast>
+<div class="flex justify-content-center aling-items-center min-h-screen w-ful" *ngIf="operation !== 'delete'">
+  <p-card header="Formulario producto movimiento" class="w-10">
+    <form
+      [formGroup]="formProductMovement"
+      (ngSubmit)="operation == 'edit' ? updateProductMovement() : createProductMovement()"
+      class="flex flex-column gap-2"
+    >
+      <div class="field flex flex-column gap-1">
+        <label for="title">Usuario {{operation == 'edit' ? ' editor' : ''}}</label>
+        <p-dropdown
+          id="userId"
+          [options]="userList"
+          optionLabel="email"
+          optionValue="id"
+          formControlName="userId"
+          placeholder="Seleccione un usuario"
+          [style]="{ width: '100%' }">
+        </p-dropdown>
+      </div>
+      <div class="field flex flex-column gap-1">
+        <label for="title">Tipo de movimiento</label>
+        <p-dropdown
+          id="movementType"
+          [options]="movementTypeOptions"
+          formControlName="movementType"
+          optionLabel="label"
+          placeholder="Seleccione un tipo de movimiento"
+          [style]="{ width: '100%' }"
+        >
+        </p-dropdown>
+
+      </div>
+      <div class="field flex flex-column gap-1">
+        <label for="title">Cantidad</label>
+        <p-inputNumber inputId="integeronly" formControlName="quantity" />
+      </div>
+      <div class="field flex flex-column gap-1">
+        <label for="title">Descripción</label>
+        <input type="text" pInputText formControlName="description" />
+      </div>
+
+      <div class="flex gap-2">
+        <p-button
+          label="Primary"
+          label="Guardar"
+          [loading]="isSaveInProgress"
+          type="submit"
+        >
+        </p-button>
+      </div>
+    </form>
+  </p-card>
+</div>
+
+<div class="flex justify-content-center aling-items-center min-h-screen w-ful" *ngIf="operation === 'delete'">
+  <p-card header="Eliminar producto" class="w-10">
+    <form
+      [formGroup]="formDeleteProductMovement"
+      (ngSubmit)="deleteProductMovement()"
+      class="flex flex-column gap-2"
+    >
+      <div class="field flex flex-column gap-1">
+        <label for="title">Usuario</label>
+        <p-dropdown
+          id="userId"
+          [options]="userList"
+          optionLabel="email"
+          optionValue="id"
+          formControlName="userId"
+          placeholder="Seleccione un usuario">
+        </p-dropdown>
+        <small *ngIf="formDeleteProductMovement?.get('userId')?.invalid && formDeleteProductMovement?.get('userId')?.touched" class="p-error">
+          Usuario requerido
+        </small>
+      </div>
+
+      <div class="flex gap-2">
+        <p-button
+          label="Secundary"
+          label="Eliminar"
+          [loading]="isDeleteInProgress"
+          type="submit"
+        >
+        </p-button>
+      </div>
+    </form>
+  </p-card>
+</div>
+

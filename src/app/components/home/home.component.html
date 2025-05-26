@@ -1,0 +1,72 @@
+
+<a routerLink="/product-form/new" class="p-button font-bold">
+  Crear nuevo producto
+</a>
+
+
+  <div class="row mt-2">
+    <p-table
+      [value]="products"
+      onchange="getAllProducts()"
+      page
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th class="table-bordered">Id</th>
+          <th class="table-bordered">Nombre</th>
+          <th class="action-center">Cantdad</th>
+          <th class="action-center">Registrado por</th>
+          <th class="action-center">Modificado por</th>
+          <th class="action-center">descripcion</th>
+          <th class="action-center">Fecha de creacion</th>
+          <th class="action-center">Fecha de actualizacion</th>
+          <th class="action-center"></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-product>
+        <tr>
+          <td>
+            {{ product?.id }}
+          </td>
+          <td>
+            {{ product?.name }}
+          </td>
+          <td class="action-center">{{ product?.quantity }}</td>
+          <td>
+            {{ getUserLabel(product?.registeredByUserId) }}
+          </td>
+          <td>
+            {{ getUserLabel(product?.modifiedByUserId)}}
+          </td>
+          <td>
+            {{ product?.description }}
+          </td>
+          <td class="action-center">
+            {{ (product?.createdAt | date: 'dd/MM/yyyy') ?? '' }}
+          </td>
+          <td class="action-center">
+            {{ (product?.updatedAt | date: 'dd/MM/yyyy') ?? '' }}
+          </td>
+          <td class="action-center">
+            <i
+              class="pi pi-list mx-1"
+              pTooltip="Ver movimientos"
+              (click)="redirectMovements(product)"
+              [style]="{ cursor: 'pointer' }"
+            ></i>
+            <i
+              pTooltip="Editar"
+              class="pi pi-check-square icon-edit mx-1"
+              (click)="redirectEdit(product)"
+            ></i>
+            <i
+              pTooltip="Eliminar"
+              class="pi pi-trash mx-1"
+              (click)="redirectDelete(product)"
+              [style]="{ cursor: 'pointer' }"
+            ></i>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
