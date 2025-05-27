@@ -12,7 +12,6 @@ import { UserResponseDto } from '../../../models/api-user/user';
 import { ProductService } from '../../../services/product/product.service';
 import { UserService } from '../../../services/user/user.service';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { MessageService } from 'primeng/api';
 import { AlertService } from '../../../services/message/alert.service';
 import { MovementTypes } from '../../../shared/movement-types.enum';
 import { ProductMovementService } from '../../../services/product-movement/product-movement.service';
