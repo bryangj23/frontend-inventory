@@ -15,7 +15,7 @@ export class ProductMovementService {
 
     getProductMovements(productId: number, filters: string): Observable<ProductMovementResponseDto[]> {
       return this.http.get<ProductMovementResponseDto[]>(`${this.apiUrl}/${productId}/product-movements`, {
-        params: { filter: filters }
+        params: { filters: filters }
       });
     }
 
