@@ -177,6 +177,7 @@ export class ProductMovementFormComponent implements OnInit {
         next: (data) => {
           this.productMovement = data;
           this.formProductMovement.patchValue(data);
+          this.formProductMovement.get('movementType')?.setValue(this.movementTypeOptions.find(item => item.value == this.productMovement?.movementType));
         },
         error: () => {
           this.router.navigateByUrl('/');
