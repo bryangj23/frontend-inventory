@@ -1,65 +1,53 @@
-
-<a routerLink="/product-movement-form/{{this.productFind?.id}}/movement/new" class="p-button font-bold">
-  Crear nuevo moviemiento
+<a
+  [routerLink]="['/product-movement-form', currentProduct?.id, 'movement', 'new']"
+  class="p-button font-bold"
+>
+  Crear nuevo movimiento
 </a>
 
- <div class="row mt-2">
-    <p-table
-      [value]="productMovements"
-      onchange="getAllProductMovements()"
-      page
-    >
-      <ng-template pTemplate="header">
-        <tr>
-          <th class="table-bordered">Id</th>
-          <th class="table-bordered">Producto</th>
-          <th class="action-center">Tipo de movimiento</th>
-          <th class="action-center">Cantidad</th>
-          <th class="action-center">Registrado por</th>
-          <th class="action-center">descripcion</th>
-          <th class="action-center">Fecha de creacion</th>
-          <th class="action-center">Fecha de actualizacion</th>
-          <th class="action-center"></th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-product>
-        <tr>
-          <td>
-            {{ product?.id }}
-          </td>
-          <td>
-            {{ productFind?.name }}
-          </td>
-          <td>
-            {{ formatLabel(product?.movementType) }}
-          </td>
-          <td class="action-center">{{ product?.quantity }}</td>
-          <td>
-            {{ getUserLabel(product?.userId) }}
-          </td>
-          <td>
-            {{ product?.description }}
-          </td>
-          <td class="action-center">
-            {{ (product?.createdAt | date: 'dd/MM/yyyy') ?? '' }}
-          </td>
-          <td class="action-center">
-            {{ (product?.updatedAt | date: 'dd/MM/yyyy') ?? '' }}
-          </td>
-          <td class="action-center">
-            <i
-              pTooltip="Editar"
-              class="pi pi-check-square icon-edit mx-1"
-              (click)="redirectEdit(product)"
-            ></i>
-            <i
-              pTooltip="Eliminar"
-              class="pi pi-trash mx-1"
-              (click)="redirectDelete(product)"
-              [style]="{ cursor: 'pointer' }"
-            ></i>
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
-  </div>
+<div class="row mt-2">
+  <p-table [value]="records" [paginator]="true" [rows]="20">
+    <ng-template pTemplate="header">
+      <tr>
+        <th class="table-bordered">Id</th>
+        <th class="table-bordered">Producto</th>
+        <th class="action-center">Tipo de movimiento</th>
+        <th class="action-center">Cantidad</th>
+        <th class="action-center">Registrado por</th>
+        <th class="action-center">Descripción</th>
+        <th class="action-center">Fecha de creación</th>
+        <th class="action-center">Fecha de actualización</th>
+        <th class="action-center">Acciones</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-record>
+      <tr>
+        <td>{{ record.id }}</td>
+        <td>{{ currentProduct?.name }}</td>
+        <td>{{ formatMovementLabel(record.movementType) }}</td>
+        <td class="action-center">{{ record.quantity }}</td>
+        <td>{{ resolveUserEmail(record.userId) }}</td>
+        <td>{{ record.description }}</td>
+        <td class="action-center">
+          {{ record.createdAt | date: 'dd/MM/yyyy' }}
+        </td>
+        <td class="action-center">
+          {{ record.updatedAt | date: 'dd/MM/yyyy' }}
+        </td>
+        <td class="action-center">
+          <i
+            pTooltip="Editar"
+            class="pi pi-check-square icon-edit mx-1"
+            (click)="navigateToEdit(record)"
+          ></i>
+          <i
+            pTooltip="Eliminar"
+            class="pi pi-trash mx-1"
+            (click)="navigateToDelete(record)"
+            style="cursor: pointer"
+          ></i>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>

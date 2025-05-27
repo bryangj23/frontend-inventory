@@ -1,11 +1,11 @@
 import { AlertService } from './../../services/message/alert.service';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ProductMovementResponseDto } from '../../models/api-inventory/product-movement/product-movement';
 import { UserResponseDto } from '../../models/api-user/user';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { UserService } from '../../services/user/user.service';
 import { ProductMovementService } from '../../services/product-movement/product-movement.service';
-import { MessageService, SharedModule } from 'primeng/api';
+import { SharedModule } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
@@ -38,33 +38,40 @@ import { MovementTypes } from '../../shared/movement-types.enum';
   templateUrl: './product-movement.component.html',
   styleUrl: './product-movement.component.scss'
 })
-export class ProductMovementComponent {
+export class ProductMovementComponent implements OnInit {
 
-  productMovements: ProductMovementResponseDto[] = [];
-  userList: UserResponseDto[] = [];
-  productFind?: ProductResponseDto;
+  FILTERS_ACTIVE = 'active==true';
+  records: ProductMovementResponseDto[] = [];
+  userOptions: UserResponseDto[] = [];
+  currentProduct?: ProductResponseDto;
 
   constructor(
-    private productService: ProductService,
-    private productMovementService: ProductMovementService,
+    private productSvc: ProductService,
+    private movementSvc: ProductMovementService,
     private router: Router,
-    private userService: UserService,
-    private activateRoute: ActivatedRoute,
-    private alertService: AlertService){}
+    private userSvc: UserService,
+    private route: ActivatedRoute,
+    private alertSvc: AlertService
+  ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('productId');
+    if (!id) {
+      this.router.navigateByUrl('/');
+      return;
+    }
 
-    let id = this.activateRoute.snapshot.paramMap.get('productId');
+    const productId = +id;
 
-    this.getUsers();
-    this.getProductById(+id!);
-    this.getAllProductMovements(+id!);
+    this.fetchUsers();
+    this.fetchProductDetails(productId);
+    this.fetchMovementsByProduct(productId);
   }
 
-  getProductById(id: number){
-    this.productService.getProductById(id).subscribe({
-      next:(foundProduct) => {
-        this.productFind = foundProduct;
+  private fetchProductDetails(productId: number): void {
+    this.productSvc.getProductById(productId).subscribe({
+      next: (data) => {
+        this.currentProduct = data;
       },
       error: () => {
         this.router.navigateByUrl('/');
@@ -72,45 +79,52 @@ export class ProductMovementComponent {
     });
   }
 
-
-    formatLabel(type: MovementTypes): string {
-      switch (type) {
-        case MovementTypes.INPUT:
-          return 'Entrada';
-        case MovementTypes.OUTPUT:
-          return 'Salida';
-        default:
-          return type;
+  private fetchMovementsByProduct(productId: number): void {
+    this.movementSvc.getProductMovements(productId, this.FILTERS_ACTIVE).subscribe({
+      next: (data) => {
+        console.log('Movimientos obtenidos:', data);
+        this.records = data.filter(item => item.active == true);
+        if (data.length === 0) {
+          this.alertSvc.showInfoMessage({
+            message: 'No se encontraron movimientos para el producto'
+          });
+        }
       }
-    }
-
-    getAllProductMovements(productId: number){
-      this.productMovementService.getProductMovements(productId).subscribe((data) => {
-        this.productMovements = data;
-        if(data.length == 0){
-          this.alertService.showInfoMessage({message: 'No se encontraron movimientos para el producto'})
-        }
-      })
-    }
-
-    getUsers(){
-      this.userService.getUsers().subscribe({
-        next:(foundUsers) => {
-          this.userList = foundUsers;
-        }
-      });
-    }
-
-    redirectEdit(productMovement: ProductMovementResponseDto) {
-      this.router.navigate([`product-movement-form/${productMovement.productId}/movement/${productMovement.id}`,]);
-    }
-
-    redirectDelete(productMovement: ProductMovementResponseDto) {
-      this.router.navigate([`product-movement-form/${productMovement.productId}/movement/${productMovement.id}/delete`,]);
-    }
-
-    getUserLabel(userId: number){
-      return this.userList.find(user => user.id == userId)?.email ?? '- -';
-    }
-
+    });
   }
+
+  private fetchUsers(): void {
+    this.userSvc.getUsers().subscribe({
+      next: (users) => {
+        this.userOptions = users;
+      }
+    });
+  }
+
+  formatMovementLabel(type: MovementTypes): string {
+    switch (type) {
+      case MovementTypes.INPUT:
+        return 'Entrada';
+      case MovementTypes.OUTPUT:
+        return 'Salida';
+      default:
+        return type;
+    }
+  }
+
+  resolveUserEmail(userId: number): string {
+    return this.userOptions.find(user => user.id === userId)?.email ?? '- -';
+  }
+
+  navigateToEdit(record: ProductMovementResponseDto): void {
+    this.router.navigate([
+      `product-movement-form/${record.productId}/movement/${record.id}`
+    ]);
+  }
+
+  navigateToDelete(record: ProductMovementResponseDto): void {
+    this.router.navigate([
+      `product-movement-form/${record.productId}/movement/${record.id}/delete`
+    ]);
+  }
+}

@@ -13,8 +13,10 @@ export class ProductMovementService {
 
     constructor(private http: HttpClient) { }
 
-    getProductMovements(productId: number): Observable<ProductMovementResponseDto[]> {
-      return this.http.get<ProductMovementResponseDto[]>(`${this.apiUrl}/${productId}/product-movements`);
+    getProductMovements(productId: number, filters: string): Observable<ProductMovementResponseDto[]> {
+      return this.http.get<ProductMovementResponseDto[]>(`${this.apiUrl}/${productId}/product-movements`, {
+        params: { filter: filters }
+      });
     }
 
     getProductMovementById(productId: number, id: number): Observable<ProductMovementResponseDto> {

@@ -1,6 +1,5 @@
-import { ProductRequestDto } from './../../models/api-inventory/product';
 import { ButtonModule } from 'primeng/button';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ProductResponseDto } from '../../models/api-inventory/product';
 import { ProductService } from '../../services/product/product.service';
 import { Router, RouterModule } from '@angular/router';
@@ -16,6 +15,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { UserResponseDto } from '../../models/api-user/user';
 import { UserService } from '../../services/user/user.service';
 import { TooltipModule } from 'primeng/tooltip';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-home',
@@ -35,52 +35,61 @@ import { TooltipModule } from 'primeng/tooltip';
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
-export class HomeComponent implements OnInit {
-
+export class HomeComponent implements OnInit, OnDestroy {
   products: ProductResponseDto[] = [];
-  product?: ProductResponseDto;
-  productNew?: ProductRequestDto;
-
   userList: UserResponseDto[] = [];
 
-  constructor(private productService: ProductService,
-  private router: Router,
-  private userService: UserService){}
+  private destroy$ = new Subject<void>();
 
+  constructor(
+    private readonly productService: ProductService,
+    private readonly userService: UserService,
+    private readonly router: Router
+  ) {}
 
   ngOnInit(): void {
-    this.getAllProducts();
-    this.getUsers();
+    this.loadProducts();
+    this.loadUsers();
   }
 
-  getAllProducts(){
-    this.productService.getProducts().subscribe((data) => {
-      this.products = data;
-    })
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  getUsers(){
-    this.userService.getUsers().subscribe({
-      next:(foundUsers) => {
-        this.userList = foundUsers;
-      }
-    });
+  private loadProducts(): void {
+    this.productService
+      .getProducts()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => (this.products = data),
+        error: (err) => console.error('Error fetching products', err),
+      });
   }
 
-  redirectEdit(product: ProductResponseDto) {
-    this.router.navigate([`product-form/${product.id}`,]);
+  private loadUsers(): void {
+    this.userService
+      .getUsers()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (users) => (this.userList = users),
+        error: (err) => console.error('Error fetching users', err),
+      });
   }
 
-  redirectDelete(product: ProductResponseDto) {
-    this.router.navigate([`product-form/${product.id}/delete`,]);
+  getUserLabel(userId: number): string {
+    return this.userList.find((user) => user.id === userId)?.email ?? '--';
   }
 
-  redirectMovements(product: ProductResponseDto) {
-    this.router.navigate([`product-movement/${product.id}`,]);
+  redirectToEdit(product: ProductResponseDto): void {
+    this.router.navigate([`product-form/${product.id}`]);
   }
 
-  getUserLabel(userId: number){
-    return this.userList.find(user => user.id == userId)?.email ?? '- -';
+  redirectToDelete(product: ProductResponseDto): void {
+    this.router.navigate([`product-form/${product.id}/delete`]);
   }
 
+  redirectToMovements(product: ProductResponseDto): void {
+    this.router.navigate([`product-movement/${product.id}`]);
+  }
 }
