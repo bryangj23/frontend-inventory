@@ -39,6 +39,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   products: ProductResponseDto[] = [];
   userList: UserResponseDto[] = [];
 
+  filterName: string = '';
+  filterRegisteredByUserId: number | null = null;
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -57,15 +60,39 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  private loadProducts(): void {
+  private loadProducts(filters?: string): void {
     this.productService
-      .getProducts()
+      .getProducts(filters)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => (this.products = data),
         error: (err) => console.error('Error fetching products', err),
       });
   }
+
+  filterProducts(): void {
+      const filters: string[] = [];
+
+      if (this.filterName?.trim()) {
+        filters.push(`name==*${this.filterName.trim()}*`);
+      }
+
+      if (this.filterRegisteredByUserId) {
+        filters.push(`registeredByUserId==${this.filterRegisteredByUserId}`);
+      }
+
+      const rsql = filters.join(';');
+      this.loadProducts(rsql);
+  }
+
+
+  clearFilters(): void {
+    this.filterName = '';
+    this.filterRegisteredByUserId = null;
+
+    this.loadProducts();
+  }
+
 
   private loadUsers(): void {
     this.userService

@@ -13,8 +13,10 @@ export class ProductService {
 
   constructor(private http: HttpClient) { }
 
-  getProducts(): Observable<ProductResponseDto[]> {
-    return this.http.get<ProductResponseDto[]>(this.apiUrl);
+  getProducts(filters?: string): Observable<ProductResponseDto[]> {
+    return this.http.get<ProductResponseDto[]>(this.apiUrl, {
+        params: { filters: filters ?? '' }
+      });
   }
 
   getProductById(id: number): Observable<ProductResponseDto> {

@@ -82,7 +82,6 @@ export class ProductMovementComponent implements OnInit {
   private fetchMovementsByProduct(productId: number): void {
     this.movementSvc.getProductMovements(productId, this.FILTERS_ACTIVE).subscribe({
       next: (data) => {
-        console.log('Movimientos obtenidos:', data);
         this.records = data.filter(item => item.active == true);
         if (data.length === 0) {
           this.alertSvc.showInfoMessage({
