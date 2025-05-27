@@ -17,7 +17,7 @@ import { UserResponseDto } from '../../models/api-user/user';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ProductRequestDto, ProductResponseDto } from '../../models/api-inventory/product';
-import { DropdownItem, DropdownModule } from 'primeng/dropdown';
+import { DropdownModule } from 'primeng/dropdown';
 import { CommonModule } from '@angular/common';
 import { AlertService } from '../../services/message/alert.service';
 
@@ -30,186 +30,154 @@ import { AlertService } from '../../services/message/alert.service';
   styleUrl: './product-form.component.scss',
 })
 export class ProductFormComponent implements OnInit {
-  formProduct!: FormGroup;
-  formDeleteProduct!: FormGroup;
-  operation: string = '';
+  formProduct: FormGroup;
+  formDeleteProduct: FormGroup;
+  operation: 'new' | 'edit' | 'delete' = 'new';
   userList: UserResponseDto[] = [];
   product?: ProductResponseDto;
 
-  isSaveInProgress: boolean = false;
-  isDeleteInProgress: boolean = false;
+  isSaveInProgress = false;
+  isDeleteInProgress = false;
 
-  constructor(private fb: FormBuilder,
+  constructor(
+    private fb: FormBuilder,
     private productService: ProductService,
     private userService: UserService,
-    private activateRoute: ActivatedRoute,
+    private activatedRoute: ActivatedRoute,
     private alertService: AlertService,
-    private router: Router,
-
+    private router: Router
   ) {
-    this.initializeFormsProduct();
-    this.getUsers();
+    this.formProduct = this.createFormProduct();
+    this.formDeleteProduct = this.createFormDeleteProduct();
   }
 
   ngOnInit(): void {
-
-    let id = this.activateRoute.snapshot.paramMap.get('id');
-    const deleteRoute = this.router.url.includes('delete');
-
-    if(id !== 'new' && deleteRoute == false){
-      this.operation = 'edit';
-      this.getProductById(+id!);
-      return;
-    }
-
-    if(deleteRoute){
-      this.operation = 'delete';
-      this.getProductById(+id!);
-      return;
-    }
-
-    this.operation = 'new';
-
-    console.log(this.operation)
+    this.setupOperation();
+    this.loadUsers();
   }
 
-  initializeFormsProduct() {
-    this.formProduct = this.fb.group({
+  private setupOperation(): void {
+    const id = this.activatedRoute.snapshot.paramMap.get('id');
+    const isDelete = this.router.url.includes('delete');
+
+    if (id && id !== 'new') {
+      this.operation = isDelete ? 'delete' : 'edit';
+      this.loadProduct(+id);
+    } else {
+      this.operation = 'new';
+    }
+  }
+
+  private createFormProduct(): FormGroup {
+    return this.fb.group({
       id: [null],
-      name: ['',
-         [
-          Validators.required,
-          Validators.maxLength(25),
-          Validators.pattern(/^[a-zA-Z ]+$/)]
-        ],
-      quantity: [1, [
-        Validators.required,
-        Validators.pattern(/^[0-9]+$/),
-        Validators.min(1)
-      ]],
+      name: ['', [Validators.required, Validators.maxLength(25), Validators.pattern(/^[a-zA-Z ]+$/)]],
+      quantity: [1, [Validators.required, Validators.pattern(/^[0-9]+$/), Validators.min(1)]],
       userId: [null, Validators.required],
-      description: ['', [
-          Validators.maxLength(255),
-          Validators.pattern(/^[a-zA-Z ]+$/)
-      ]],
+      description: ['', [Validators.maxLength(255), Validators.pattern(/^[a-zA-Z ]+$/)]],
     });
+  }
 
-    this.formDeleteProduct = this.fb.group({
+  private createFormDeleteProduct(): FormGroup {
+    return this.fb.group({
       id: [null],
-      userId: [null, Validators.required]
+      userId: [null, Validators.required],
     });
   }
 
-  getUsers(){
+  private loadUsers(): void {
     this.userService.getUsers().subscribe({
-      next:(foundUsers) => {
-        this.userList = foundUsers;
-      }
+      next: (users) => (this.userList = users),
+      error: () => this.alertService.showErrorMessage({ title: 'Error', message: 'Error al cargar los usuarios' }),
     });
   }
 
-  getProductById(id: number){
+  private loadProduct(id: number): void {
     this.productService.getProductById(id).subscribe({
-      next:(foundProduct) => {
-        this.product = foundProduct;
-        this.formProduct.patchValue(foundProduct);
+      next: (product) => {
+        this.product = product;
+        this.formProduct.patchValue(product);
+        this.formDeleteProduct.patchValue({ id: product.id });
       },
-      error: () => {
-        this.router.navigateByUrl('/');
-      }
+      error: () => this.router.navigateByUrl('/'),
     });
   }
 
-  createProduct(){
+  onSubmit(): void {
+    if (this.operation === 'edit') {
+      this.updateProduct();
+    } else if (this.operation === 'new') {
+      this.createProduct();
+    }
+  }
 
-    if(this.formProduct.invalid){
-      this.alertService.showErrorMessage({
-        title: 'Error',
-        message: 'Revise los campos he intente nuevamente'
-      });
+  private createProduct(): void {
+    if (this.formProduct.invalid) {
+      this.showValidationError();
       return;
     }
 
-    const pyload: ProductRequestDto = this.formProduct.value;
-    pyload.description = pyload.description?.trim() == '' ? null : pyload.description;
+    const payload: ProductRequestDto = this.prepareProductPayload();
 
     this.isSaveInProgress = true;
-    this.productService.createProduct(pyload).subscribe({
-      next:() => {
-          this.alertService.showSuccessMessage({
-            title: 'Guardado',
-            message: 'Producto guardado correctamente'
-          });
-          setTimeout(() =>{
-            this.isSaveInProgress = false;
-            this.router.navigateByUrl('/');
-          }, 1000)
-      },
-      error: () => {
-        this.isSaveInProgress = false;
-      }
+    this.productService.createProduct(payload).subscribe({
+      next: () => this.handleSuccess('Producto guardado correctamente'),
+      error: () => (this.isSaveInProgress = false),
     });
   }
 
-  updateProduct(){
-
-    if(this.formProduct.invalid){
-      this.alertService.showErrorMessage({
-        title: 'Error',
-        message: 'Revise los campos he intente nuevamente'
-      });
+  private updateProduct(): void {
+    if (this.formProduct.invalid || !this.product?.id) {
+      this.showValidationError();
       return;
     }
 
-    const pyload: ProductRequestDto = this.formProduct.value;
-    pyload.description = pyload.description?.trim() == '' ? null : pyload.description;
+    const payload: ProductRequestDto = this.prepareProductPayload();
 
     this.isSaveInProgress = true;
-    this.productService.updateProduct(this.product?.id ?? 0, pyload).subscribe({
-      next:() => {
-          this.alertService.showSuccessMessage({
-            title: 'Guardado',
-            message: 'Producto actualizado correctamente'
-          });
-
-          setTimeout(() =>{
-            this.isSaveInProgress = false;
-            this.router.navigateByUrl('/');
-          }, 1000)
-      },
-      error: () => {
-        this.isSaveInProgress = false;
-      }
+    this.productService.updateProduct(this.product.id, payload).subscribe({
+      next: () => this.handleSuccess('Producto actualizado correctamente'),
+      error: () => (this.isSaveInProgress = false),
     });
   }
 
-  deleteProduct(){
-    if(this.formDeleteProduct.invalid){
-      this.alertService.showErrorMessage({
-        title: 'Error',
-        message: 'Revise los campos he intente nuevamente'
-      });
+  public deleteProduct(): void {
+    if (this.formDeleteProduct.invalid || !this.product?.id) {
+      this.showValidationError();
       return;
     }
 
-    const userId: number = this.formDeleteProduct?.get('userId')?.value ?? 0;
+    const userId: number = this.formDeleteProduct.get('userId')?.value;
+
     this.isDeleteInProgress = true;
-
-    this.productService.deleteProduct(this.product?.id ?? 0, userId).subscribe({
-      next:() => {
-          this.alertService.showSuccessMessage({
-            title: 'Eliminado',
-            message: 'Producto eliminado correctamente'
-          });
-          setTimeout(() =>{
-            this.isDeleteInProgress = false;
-            this.router.navigateByUrl('/');
-          }, 1000)
-      },
-      error: () => {
-        this.isDeleteInProgress = false;
-      }
+    this.productService.deleteProduct(this.product.id, userId).subscribe({
+      next: () => this.handleSuccess('Producto eliminado correctamente', true),
+      error: () => (this.isDeleteInProgress = false),
     });
   }
 
+  private prepareProductPayload(): ProductRequestDto {
+    const payload: ProductRequestDto = this.formProduct.value;
+    payload.description = payload.description?.trim() || null;
+    return payload;
+  }
+
+  private showValidationError(): void {
+    this.alertService.showErrorMessage({
+      title: 'Error',
+      message: 'Revise los campos e intente nuevamente',
+    });
+  }
+
+  private handleSuccess(message: string, isDelete: boolean = false): void {
+    this.alertService.showSuccessMessage({
+      title: isDelete ? 'Eliminado' : 'Guardado',
+      message,
+    });
+
+
+    this.isSaveInProgress = false;
+    this.isDeleteInProgress = false;
+    this.router.navigateByUrl('/');
+  }
 }
