@@ -51,7 +51,6 @@ export class ProductMovementComponent implements OnInit {
   constructor(
     private productSvc: ProductService,
     private movementSvc: ProductMovementService,
-    private readonly userService: UserService,
     private router: Router,
     private userSvc: UserService,
     private route: ActivatedRoute,
