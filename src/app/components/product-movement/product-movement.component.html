@@ -5,6 +5,43 @@
   Crear nuevo movimiento
 </a>
 
+<div class="flex flex-wrap gap-8 mt-2 mb-3 align-items-center">
+  <div class="flex flex-column gap-2">
+    <label for="registeredByUserId">Usuario</label>
+    <p-dropdown
+      id="registeredByUserId"
+      [options]="userOptions"
+      optionLabel="email"
+      optionValue="id"
+      [(ngModel)]="filterRegisteredByUserId"
+      placeholder="Seleccione un usuario"
+      class="w-15rem"
+    ></p-dropdown>
+  </div>
+
+  <div class="flex flex-column mt-5">
+    <button
+      pButton
+      type="button"
+      icon="pi pi-search"
+      label="Buscar"
+      class="p-button-sm"
+      (click)="filterProducts()"
+    ></button>
+  </div>
+
+  <div class="flex flex-column mt-5">
+    <button
+      pButton
+      type="button"
+      icon="pi pi-times"
+      label="Limpiar"
+      class="p-button-sm p-button-secondary"
+      (click)="clearFilters()"
+    ></button>
+  </div>
+</div>
+
 <div class="row mt-2">
   <p-table [value]="records">
     <ng-template pTemplate="header">

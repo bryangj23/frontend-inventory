@@ -19,6 +19,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ProductResponseDto } from '../../models/api-inventory/product';
 import { ProductService } from '../../services/product/product.service';
 import { MovementTypes } from '../../shared/movement-types.enum';
+import { takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-product-movement',
@@ -45,9 +46,12 @@ export class ProductMovementComponent implements OnInit {
   userOptions: UserResponseDto[] = [];
   currentProduct?: ProductResponseDto;
 
+  filterRegisteredByUserId: number | null = null;
+
   constructor(
     private productSvc: ProductService,
     private movementSvc: ProductMovementService,
+    private readonly userService: UserService,
     private router: Router,
     private userSvc: UserService,
     private route: ActivatedRoute,
@@ -79,8 +83,21 @@ export class ProductMovementComponent implements OnInit {
     });
   }
 
-  private fetchMovementsByProduct(productId: number): void {
-    this.movementSvc.getProductMovements(productId, this.FILTERS_ACTIVE).subscribe({
+  filterProducts(): void {
+      const filters: string[] = [];
+
+      if (this.filterRegisteredByUserId) {
+        filters.push(`userId==${this.filterRegisteredByUserId}`);
+      }
+
+      filters.push(this.FILTERS_ACTIVE)
+
+      this.fetchMovementsByProduct(this.currentProduct?.id ?? 0, filters.join(';'));
+  }
+
+
+  private fetchMovementsByProduct(productId: number, filters?: string): void {
+    this.movementSvc.getProductMovements(productId, filters ?? this.FILTERS_ACTIVE).subscribe({
       next: (data) => {
         this.records = data.filter(item => item.active == true);
         if (data.length === 0) {
@@ -90,6 +107,11 @@ export class ProductMovementComponent implements OnInit {
         }
       }
     });
+  }
+
+  clearFilters(): void {
+    this.filterRegisteredByUserId = null;
+    this.fetchMovementsByProduct(this.currentProduct?.id ?? 0);
   }
 
   private fetchUsers(): void {
